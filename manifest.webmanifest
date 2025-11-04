@@ -1,12 +1,10 @@
 {
-  "name": "حاسبة جرعات الأنسولين",
+  "name": "حاسبة الأنسولين",
   "short_name": "حاسبة الأنسولين",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0ea5e9",
-  "dir": "rtl",
-  "lang": "ar",
+  "background_color": "#f3f8ff",
+  "theme_color": "#0078d7",
   "icons": [
     {
       "src": "icon-192.png",

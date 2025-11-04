@@ -1,8 +1,6 @@
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open('insulin-calc-v1').then((cache) => cache.addAll([
-    './', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'
-  ])));
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open('insulin-calc-v1').then(cache => cache.addAll(['./', './index.html'])));
 });
-self.addEventListener('fetch', (e) => {
-  e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(resp => resp || fetch(e.request)));
 });
