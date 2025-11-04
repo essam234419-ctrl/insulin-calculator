@@ -1,44 +1,42 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة جرعات الأنسولين</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <script>
-    function calculateDose() {
-      const current = parseFloat(document.getElementById('current').value);
-      const target = parseFloat(document.getElementById('target').value);
-      const carb = parseFloat(document.getElementById('carb').value);
-      const icr = parseFloat(document.getElementById('icr').value);
-      const isf = parseFloat(document.getElementById('isf').value);
-      if (isNaN(current)||isNaN(target)||isNaN(carb)||isNaN(icr)||isNaN(isf)){
-        alert("الرجاء إدخال جميع القيم بشكل صحيح"); return;
-      }
-      const correction = (current - target) / isf;
-      const meal = carb / icr;
-      const total = Math.round((correction + meal) * 10) / 10;
-      document.getElementById('result').innerText = `الجرعة الموصى بها: ${total} وحدة`;
-    }
-  </script>
-  <style>
-    body { font-family: "Tahoma"; text-align: center; background-color: #f3f8ff; }
-    h1 { color: #005a9e; }
-    input { margin: 5px; padding: 10px; width: 150px; font-size: 16px; }
-    button { margin-top: 10px; padding: 10px 20px; background-color: #0078d7; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    button:hover { background-color: #005fa3; }
-    #result { margin-top: 20px; font-size: 20px; color: #0078d7; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>حاسبة لُمى عصام الطويل</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0ea5e9" />
+<style>
+body{background:#0b1220;color:#e5e7eb;font-family:Tajawal,Segoe UI,Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+.card{width:min(540px,95vw);background:#0e1729;padding:20px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+input{width:100%;padding:10px;margin-top:5px;margin-bottom:10px;border-radius:10px;border:1px solid #223149;background:#0a1324;color:#e5e7eb}
+button{width:100%;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#001a29;font-weight:700;cursor:pointer}
+.result{margin-top:15px;background:#091223;padding:10px;border-radius:10px}
+</style>
 </head>
 <body>
-  <h1>💉 حاسبة جرعات الأنسولين</h1>
-  <p>أدخل القيم التالية:</p>
-  <input id="current" placeholder="السكر الحالي (mg/dL)" type="number"><br>
-  <input id="target" placeholder="الهدف (mg/dL)" type="number"><br>
-  <input id="carb" placeholder="الكربوهيدرات (غرام)" type="number"><br>
-  <input id="icr" placeholder="معامل الكربوهيدرات" type="number"><br>
-  <input id="isf" placeholder="معامل التصحيح" type="number"><br>
-  <button onclick="calculateDose()">احسب الجرعة</button>
-  <div id="result"></div>
+<div class="card">
+<h2 style="text-align:center;color:#7dd3fc">💉 حاسبة لُمى عصام الطويل</h2>
+<label>السكر الحالي</label><input id="current" type="number" placeholder="مثال: 240" />
+<label>الهدف</label><input id="target" type="number" placeholder="مثال: 130" value="130" />
+<label>الكربوهيدرات (اختياري)</label><input id="carb" type="number" placeholder="مثال: 45" />
+<label>معامل الكربوهيدرات (ICR)</label><input id="icr" type="number" placeholder="مثال: 12" />
+<label>معامل التصحيح (ISF)</label><input id="isf" type="number" placeholder="مثال: 95" value="95" />
+<button onclick="calc()">احسب الجرعة</button>
+<div id="out" class="result" style="display:none"></div>
+</div>
+<script>
+function num(v){const x=parseFloat(v);return isNaN(x)?null:x;}
+function calc(){
+let c=num(current.value),t=num(target.value),carb=num(carb.value),icr=num(icr.value),isf=num(isf.value);
+if(c===null||t===null||isf===null){alert('أدخل السكر الحالي والهدف وISF');return;}
+let meal=0;if(carb){if(!icr){alert('أدخل ICR');return;}meal=carb/icr;}
+let corr=(c-t)/isf;if(corr<0)corr=0;
+let total=(meal+corr).toFixed(1);
+let preds=[0.4,0.75,0.95].map(f=>Math.round(t+(c-t)*(1-f)));
+out.style.display='block';
+out.innerHTML=`<b>جرعة التصحيح:</b> ${corr.toFixed(1)}<br><b>جرعة الوجبة:</b> ${meal.toFixed(1)}<br><b>الإجمالي:</b> ${total}<br><hr><b>تنبؤ السكر:</b><br>بعد 1 ساعة ≈ ${preds[0]}<br>بعد 2 ساعتين ≈ ${preds[1]}<br>بعد 3 ساعات ≈ ${preds[2]}`;
+}
+</script>
 </body>
 </html>
