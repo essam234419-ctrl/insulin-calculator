@@ -1,41 +1,202 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>حاسبة لُمى عصام الطويل</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#0ea5e9" />
 <style>
-body{background:#0b1220;color:#e5e7eb;font-family:Tajawal,Segoe UI,Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-.card{width:min(540px,95vw);background:#0e1729;padding:20px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-input{width:100%;padding:10px;margin-top:5px;margin-bottom:10px;border-radius:10px;border:1px solid #223149;background:#0a1324;color:#e5e7eb}
-button{width:100%;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#001a29;font-weight:700;cursor:pointer}
-.result{margin-top:15px;background:#091223;padding:10px;border-radius:10px}
+:root{
+  --bg:#0b1220;--card:#0e1729;--muted:#94a3b8;--text:#e5e7eb;
+  --border:#1f2a3c;--primary:#0ea5e9;--primary2:#0284c7;--ok:#22c55e;--warn:#f59e0b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Tajawal,Segoe UI,Arial}
+.wrap{min-height:100dvh;display:grid;place-items:center;padding:16px}
+.card{width:min(720px,96vw);background:var(--card);border:1px solid var(--border);
+      border-radius:18px;padding:18px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+h1{margin:6px 0 14px;text-align:center;color:#c7f9ff;font-size:24px}
+.grid{display:grid;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{font-size:13px;color:var(--muted)}
+input,select,textarea{
+  width:100%;padding:12px 10px;border-radius:12px;border:1px solid #213044;
+  background:#0a1324;color:var(--text);outline:none
+}
+textarea{min-height:66px;resize:vertical}
+input::placeholder{color:#6b7d95}
+.btn{padding:12px 14px;border:none;border-radius:12px;background:var(--primary);color:#001a29;
+     font-weight:700;cursor:pointer}
+.btn:hover{background:var(--primary2);color:white}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted)}
+.box{margin-top:12px;background:#091223;border:1px solid #1a2639;border-radius:12px;padding:12px}
+.box h3{margin:0 0 10px;color:#a7f3d0;font-size:16px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pill{background:#0d1a2c;border:1px solid #24314a;border-radius:10px;text-align:center;padding:10px;font-size:13px}
+.small{font-size:12px;color:var(--muted)}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+footer{margin-top:10px;text-align:center;font-size:12px;color:#6b7d95}
 </style>
 </head>
 <body>
-<div class="card">
-<h2 style="text-align:center;color:#7dd3fc">💉 حاسبة لُمى عصام الطويل</h2>
-<label>السكر الحالي</label><input id="current" type="number" placeholder="مثال: 240" />
-<label>الهدف</label><input id="target" type="number" placeholder="مثال: 130" value="130" />
-<label>الكربوهيدرات (اختياري)</label><input id="carb" type="number" placeholder="مثال: 45" />
-<label>معامل الكربوهيدرات (ICR)</label><input id="icr" type="number" placeholder="مثال: 12" />
-<label>معامل التصحيح (ISF)</label><input id="isf" type="number" placeholder="مثال: 95" value="95" />
-<button onclick="calc()">احسب الجرعة</button>
-<div id="out" class="result" style="display:none"></div>
+<div class="wrap">
+  <div class="card">
+    <h1>💉 حاسبة لُمى عصام الطويل</h1>
+
+    <div class="grid">
+      <div class="row3">
+        <div>
+          <label>السكر الحالي (mg/dL)</label>
+          <input id="current" type="number" inputmode="decimal" placeholder="مثال: 240">
+        </div>
+        <div>
+          <label>الهدف (mg/dL)</label>
+          <input id="target" type="number" inputmode="decimal" placeholder="مثال: 120-130" value="130">
+        </div>
+        <div>
+          <label>تقريب الجرعة</label>
+          <select id="round">
+            <option value="0.5">0.5</option>
+            <option value="1">1.0</option>
+            <option value="0.1" selected>0.1</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>الكربوهيدرات (غرام) — اختياري</label>
+          <input id="carb" type="number" inputmode="decimal" placeholder="اتركه فارغًا للتصحيح فقط">
+        </div>
+        <div>
+          <label>معامل الكربوهيدرات ICR</label>
+          <input id="icr" type="number" inputmode="decimal" placeholder="مثال: 12">
+        </div>
+      </div>
+
+      <div class="row3">
+        <div>
+          <label>معامل التصحيح ISF</label>
+          <input id="isf" type="number" inputmode="decimal" placeholder="مثال: 95" value="95">
+        </div>
+        <div>
+          <label>حد أعلى للجرعة (اختياري)</label>
+          <input id="maxDose" type="number" inputmode="decimal" placeholder="مثال: 10">
+        </div>
+        <div>
+          <label>عوامل التنبؤ (1h/2h/3h)</label>
+          <input id="factors" type="text" placeholder="0.40,0.75,0.95" value="0.40,0.75,0.95">
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn" onclick="calc()">احسب الجرعة</button>
+        <button class="btn" style="background:#334155;color:#e5e7eb" onclick="resetAll()">إعادة تعيين</button>
+      </div>
+
+      <div class="note">لو تركت الكربوهيدرات فارغة فسيتم حساب <b>جرعة تصحيح فقط</b> + تنبؤ بعد 1 / 2 / 3 ساعات.</div>
+
+      <div id="out" class="box" style="display:none"></div>
+
+      <div>
+        <label>ملاحظات (اختياري)</label>
+        <textarea id="notes" placeholder="أي ملاحظة لمتابعة الجرعات/الوجبات"></textarea>
+      </div>
+    </div>
+
+    <footer>يحفظ المدخلات تلقائيًا لهذا الجهاز — طوِّر خصيصًا للُمى ❤️</footer>
+  </div>
 </div>
+
 <script>
-function num(v){const x=parseFloat(v);return isNaN(x)?null:x;}
+// ---------- helpers & persistence ----------
+const IDs = ["current","target","carb","icr","isf","maxDose","factors","round","notes"];
+const defaults = { target:130, isf:95, round:"0.1", factors:"0.40,0.75,0.95" };
+const el = id => document.getElementById(id);
+const num = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
+const clamp = (x,min,max) => Math.max(min, Math.min(max, x));
+
+IDs.forEach(id=>{
+  const node = el(id);
+  const saved = localStorage.getItem("lama_"+id);
+  node.value = saved ?? (defaults[id] ?? "");
+  node.addEventListener("change",()=>localStorage.setItem("lama_"+id, node.value));
+});
+
+function roundTo(x, step){
+  const s = parseFloat(step || "0.1");
+  return Math.round(x / s) * s;
+}
+
+function parseFactors(s){
+  try{
+    const parts = (s || "0.40,0.75,0.95").split(",").map(t=>parseFloat(t.trim()));
+    const arr = parts.filter(v => !isNaN(v) && v>=0 && v<=1);
+    return arr.length===3 ? arr : [0.40,0.75,0.95];
+  }catch(_){ return [0.40,0.75,0.95]; }
+}
+
+// ---------- main calculation ----------
 function calc(){
-let c=num(current.value),t=num(target.value),carb=num(carb.value),icr=num(icr.value),isf=num(isf.value);
-if(c===null||t===null||isf===null){alert('أدخل السكر الحالي والهدف وISF');return;}
-let meal=0;if(carb){if(!icr){alert('أدخل ICR');return;}meal=carb/icr;}
-let corr=(c-t)/isf;if(corr<0)corr=0;
-let total=(meal+corr).toFixed(1);
-let preds=[0.4,0.75,0.95].map(f=>Math.round(t+(c-t)*(1-f)));
-out.style.display='block';
-out.innerHTML=`<b>جرعة التصحيح:</b> ${corr.toFixed(1)}<br><b>جرعة الوجبة:</b> ${meal.toFixed(1)}<br><b>الإجمالي:</b> ${total}<br><hr><b>تنبؤ السكر:</b><br>بعد 1 ساعة ≈ ${preds[0]}<br>بعد 2 ساعتين ≈ ${preds[1]}<br>بعد 3 ساعات ≈ ${preds[2]}`;
+  const current = num(el("current").value);
+  const target  = num(el("target").value);
+  const carb    = num(el("carb").value);
+  const icr     = num(el("icr").value);
+  const isf     = num(el("isf").value);
+  const maxDose = num(el("maxDose").value);
+  const rstep   = el("round").value;
+  const factors = parseFactors(el("factors").value);
+
+  if(current===null || target===null || isf===null){
+    alert("أدخل: السكر الحالي، الهدف، ومعامل التصحيح (ISF). البقية اختيارية.");
+    return;
+  }
+
+  // meal units (optional)
+  let meal=0;
+  if(carb!==null && carb>0){
+    if(icr===null || icr<=0){ alert("أدخل ICR لحساب جرعة الوجبة، أو اترك الكربوهيدرات فارغة."); return; }
+    meal = carb / icr;
+  }
+
+  // correction units (non-negative)
+  let corr = (current - target) / isf;
+  corr = Math.max(0, corr);
+
+  let total = meal + corr;
+  total = roundTo(total, rstep);
+
+  if(maxDose!==null && maxDose>0) total = Math.min(total, maxDose);
+
+  // predictions: fraction of correction effect realized
+  const preds = factors.map(frac => Math.round(target + (current - target)*(1 - frac)));
+
+  const out = el("out");
+  out.style.display = "block";
+  out.innerHTML = `
+    <h3>النتائج</h3>
+    <div class="kpis">
+      <div class="pill">تصحيح: <b>${roundTo(corr, rstep).toFixed(2)}</b> وحدة</div>
+      <div class="pill">وجبة: <b>${roundTo(meal, rstep).toFixed(2)}</b> وحدة</div>
+      <div class="pill" style="border-color:#2563eb">الإجمالي: <b>${total.toFixed(2)}</b> وحدة</div>
+    </div>
+    <div class="kpis" style="margin-top:10px">
+      <div class="pill">بعد 1 ساعة ≈ <b>${preds[0]}</b> mg/dL</div>
+      <div class="pill">بعد 2 ساعتين ≈ <b>${preds[1]}</b> mg/dL</div>
+      <div class="pill">بعد 3 ساعات ≈ <b>${preds[2]}</b> mg/dL</div>
+    </div>
+    <div class="small" style="margin-top:10px">
+      * يعتمد التنبؤ على ISF، مع افتراض تحقق الأثر ${Math.round(factors[0]*100)}% / ${Math.round(factors[1]*100)}% / ${Math.round(factors[2]*100)}% خلال 1/2/3 ساعات.
+    </div>
+  `;
+}
+
+function resetAll(){
+  IDs.forEach(id=>{ localStorage.removeItem("lama_"+id); });
+  location.reload();
 }
 </script>
 </body>
