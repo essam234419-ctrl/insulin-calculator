@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0ea5e9" />
+  <title>حاسبة جرعات الأنسولين</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background: linear-gradient(to bottom, #fafafa, #f4f4f5); }
+    @media (prefers-color-scheme: dark) {
+      body { background: linear-gradient(to bottom, #0a0a0a, #09090b); }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    const LS_KEY = "insulin_calc_ar_v1";
+
+    const toNumber = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const mround = (value, step) => {
+      const s = Number(step);
+      if (!s || s <= 0) return value;
+      return Math.round(value / s) * s;
+    };
+
+    function Row({ title, value, unit, highlight=false }) {
+      const show = Number.isFinite(value) && !Number.isNaN(value);
+      const val = show ? Number(value).toFixed(2).replace(/\.00$/, "") : "—";
+      return (
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm sm:text-base text-zinc-700 dark:text-zinc-200">{title}</span>
+          <span className={\`text-lg sm:text-xl font-semibold \${highlight ? "text-blue-600" : "text-zinc-900 dark:text-zinc-50"}\`}>
+            {val}{unit ? \` \${unit}\` : ""}
+          </span>
+        </div>
+      );
+    }
+
+    function App() {
+      const [bg, setBg] = useState("");
+      const [target, setTarget] = useState("120");
+      const [isf, setIsf] = useState("");
+      const [carbs, setCarbs] = useState("");
+      const [icr, setIcr] = useState("");
+      const [iob, setIob] = useState("0");
+      const [step, setStep] = useState("0.5");
+
+      useEffect(() => {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          try {
+            const s = JSON.parse(raw);
+            setBg(String(s.bg ?? ""));
+            setTarget(String(s.target ?? "120"));
+            setIsf(String(s.isf ?? ""));
+            setCarbs(String(s.carbs ?? ""));
+            setIcr(String(s.icr ?? ""));
+            setIob(String(s.iob ?? "0"));
+            setStep(String(s.step ?? "0.5"));
+          } catch {}
+        }
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem(LS_KEY, JSON.stringify({ bg, target, isf, carbs, icr, iob, step }));
+      }, [bg, target, isf, carbs, icr, iob, step]);
+
+      const vals = useMemo(() => {
+        const _bg = toNumber(bg);
+        const _t = toNumber(target);
+        const _isf = toNumber(isf);
+        const _carbs = toNumber(carbs);
+        const _icr = toNumber(icr);
+        const _iob = Math.max(0, toNumber(iob));
+        const _step = Math.max(0, toNumber(step));
+
+        const meal = _carbs > 0 && _icr > 0 ? Math.max(0, _carbs / _icr) : 0;
+        const correction = _bg > _t && _isf > 0 ? Math.max(0, (_bg - _t) / _isf) : 0;
+        const total = Math.max(0, meal + correction - _iob);
+        const rounded = _step > 0 ? mround(total, _step) : total;
+
+        const corrNet = Math.max(0, correction - _iob);
+        const pred1 = _bg && _isf ? _bg - _isf * corrNet * 0.5 : NaN;
+        const pred2 = _bg && _isf ? _bg - _isf * corrNet * 0.8 : NaN;
+        const pred3 = _bg && _isf ? _bg - _isf * corrNet * 1.0 : NaN;
+
+        return { meal, correction, total, rounded, pred1, pred2, pred3 };
+      }, [bg, target, isf, carbs, icr, iob, step]);
+
+      const card = "rounded-2xl shadow-lg p-4 sm:p-6 bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800";
+      const label = "block text-sm text-zinc-600 dark:text-zinc-300 mb-1";
+      const input = "w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right";
+      const pill = "rounded-xl px-3 py-1 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300";
+
+      return (
+        <div dir="rtl" className="min-h-screen p-4 sm:p-6">
+          <div className="max-w-md mx-auto space-y-4">
+            <header className="text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">حاسبة جرعات الأنسولين</h1>
+              <p className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm">سكري النوع الأول • محسّنة للجوال</p>
+            </header>
+
+            <section className={card}>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className={label}>السكّر الحالي (mg/dL)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={bg} onChange={(e) => setBg(e.target.value)} placeholder="مثال: 250" />
+                </div>
+                <div>
+                  <label className={label}>الهدف (mg/dL)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={target} onChange={(e) => setTarget(e.target.value)} placeholder="مثال: 110–130" />
+                </div>
+                <div>
+                  <label className={label}>معامل التصحيح ISF (ملجم/دسل لكل وحدة)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={isf} onChange={(e) => setIsf(e.target.value)} placeholder="مثال: 95" />
+                </div>
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+                <div>
+                  <label className={label}>كربوهيدرات الوجبة (غرام)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="مثال: 60" />
+                </div>
+                <div>
+                  <label className={label}>معامل الكربوهيدرات ICR (غرام لكل وحدة)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={icr} onChange={(e) => setIcr(e.target.value)} placeholder="مثال: 12 أو 10" />
+                </div>
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+                <div>
+                  <label className={label}>الأنسولين النشط IOB (وحدة) – اختياري</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={iob} onChange={(e) => setIob(e.target.value)} placeholder="0 إذا لا يوجد" />
+                </div>
+                <div>
+                  <label className={label}>خطوة التقريب (مثال 0.5 أو 1)</label>
+                  <input inputMode="decimal" pattern="[0-9]*" className={input} value={step} onChange={(e) => setStep(e.target.value)} placeholder="0.5" />
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2 justify-between">
+                <span className={pill}>يتم الحفظ تلقائيًا</span>
+                <button
+                  className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-semibold"
+                  onClick={() => { setBg(""); setTarget("120"); setIsf(""); setCarbs(""); setIcr(""); setIob("0"); setStep("0.5"); }}
+                >إعادة ضبط</button>
+              </div>
+            </section>
+
+            <section className={card}>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-2">النتائج</h2>
+              <div className="divide-y divide-zinc-200">
+                <Row title="جرعة الوجبة" value={vals.meal} unit="وحدة" />
+                <Row title="جرعة التصحيح" value={vals.correction} unit="وحدة" />
+                <Row title="طرح IOB" value={Math.max(0, toNumber(iob))} unit="وحدة" />
+                <Row title="الجرعة الإجمالية" value={vals.total} unit="وحدة" />
+                <Row title="الجرعة بعد التقريب" value={vals.rounded} unit="وحدة" highlight />
+              </div>
+              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
+                تنبيه: هذه أداة تعليمية ولا تغني عن إشراف الطبيب. اضبط الهدف والمعاملات وفق الخطة العلاجية.
+              </p>
+            </section>
+
+            <section className={card}>
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-2">تنبؤ مستوى السكّر (تصحيح فقط)</h2>
+              <div className="divide-y divide-zinc-200">
+                <Row title="بعد 1 ساعة (≈50%)" value={vals.pred1} unit="mg/dL" />
+                <Row title="بعد 2 ساعة (≈80%)" value={vals.pred2} unit="mg/dL" />
+                <Row title="بعد 3 ساعات (≈100%)" value={vals.pred3} unit="mg/dL" />
+              </div>
+              <p className="mt-3 text-xs text-zinc-600 leading-relaxed">
+                التنبؤ يعتمد على جرعة التصحيح الصافية بعد خصم IOB. يُفترض أن جرعة الوجبة تغطي الكربوهيدرات دون تغيير صافي.
+              </p>
+            </section>
+
+            <footer className="text-center text-xs text-zinc-500 pb-6">
+              © أداة مساعدة – للإستخدام التعليمي.
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+</body>
+</html>
